@@ -147,3 +147,8 @@ cython_debug/
 .idea/
 *.swp
 *.swo
+
+# Project local database, vector indices, and uploads
+data/
+chroma_db/
+uploads/
