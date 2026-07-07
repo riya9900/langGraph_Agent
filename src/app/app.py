@@ -10,6 +10,8 @@ if openai_key:
     print(f"[App Module] Loaded OpenAI key ending in: ...{openai_key[-8:]}")
 else:
     print("[App Module] OpenAI key NOT found in environment!")
+    
+from langfuse.langchain import CallbackHandler
 
 os.environ["SSL_CERT_FILE"] = certifi.where()
 os.environ["REQUESTS_CA_BUNDLE"] = certifi.where()
@@ -297,9 +299,17 @@ async def chat_stream(request: Request):
 
     set_current_thread_id(thread_id)
 
+    langfuse_handler = CallbackHandler()
+
     config = {
         "configurable": {
             "thread_id": thread_id
+        },
+        "callbacks": [langfuse_handler],
+        "run_name": "gpt-clone",
+        "metadata": {
+            "langfuse_session_id": thread_id,
+            "model": selected_model
         }
     }
 

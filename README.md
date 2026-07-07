@@ -17,7 +17,8 @@ Ensure you have [Poetry](https://python-poetry.org/) installed, then run:
 poetry install
 ```
 
- $env:PYTHONPATH="src" poetry run python src/app/app.py
+ $env:PYTHONPATH="src"
+  poetry run python src/app/app.py
 
 ## Running the Application
 
@@ -25,5 +26,6 @@ Activate the virtual environment and start the development server:
 
 ```bash
 poetry shell
-python -m uvicorn main:app --reload
+$env:PYTHONPATH="src"
+ poetry run python src/app/app.py
 ```
