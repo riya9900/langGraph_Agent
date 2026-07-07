@@ -21,7 +21,7 @@ import uuid
 from pathlib import Path
 
 import uvicorn
-from fastapi import FastAPI, Request, UploadFile, File, Form
+from fastapi import FastAPI, Request, UploadFile, File, Form, BackgroundTasks
 from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
@@ -127,6 +127,29 @@ async def memories():
                 for item in items
             ]
         }
+    except Exception as e:
+        return JSONResponse({"success": False, "message": str(e)}, status_code=500)
+
+
+@app.get("/episodic-memories")
+async def get_episodic_memories():
+    try:
+        from utils.memory import list_all_episodic_memories
+        items = list_all_episodic_memories()
+        return {"episodic_memories": items}
+    except Exception as e:
+        return JSONResponse({"success": False, "message": str(e)}, status_code=500)
+
+
+@app.delete("/episodic-memory/{thread_id}")
+async def delete_episodic_mem(thread_id: str):
+    try:
+        from utils.memory import delete_episodic_memory
+        success = delete_episodic_memory(thread_id)
+        if success:
+            return {"success": True, "message": "Episodic memory deleted successfully."}
+        else:
+            return JSONResponse({"success": False, "message": "Failed to delete episodic memory."}, status_code=500)
     except Exception as e:
         return JSONResponse({"success": False, "message": str(e)}, status_code=500)
 
@@ -273,7 +296,7 @@ def extract_text_from_chunk(chunk) -> str:
 
 
 @app.post("/chat/stream")
-async def chat_stream(request: Request):
+async def chat_stream(request: Request, background_tasks: BackgroundTasks):
     try:
         data = await request.json()
     except Exception:
@@ -351,6 +374,9 @@ async def chat_stream(request: Request):
 
             if final_answer.strip():
                 save_chat_message(thread_id, "assistant", final_answer)
+                # Summarize conversation and save as episodic memory in the background
+                from utils.memory import update_episodic_memory_background
+                background_tasks.add_task(update_episodic_memory_background, thread_id, selected_model)
 
             yield sse_data({"done": True})
 

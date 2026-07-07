@@ -7,6 +7,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import SystemMessage
+from langchain_core.runnables import RunnableConfig
 from langgraph.graph import StateGraph, START, END, MessagesState
 from langgraph.prebuilt import ToolNode, tools_condition
 from utils.tools import tools
@@ -106,8 +107,32 @@ def build_agent(model_name: str):
 
     llm_with_tools = llm.bind_tools(tools)
 
-    def chatbot_node(state: MessagesState):
-        messages = [SystemMessage(content=SYSTEM_PROMPT)] + state["messages"]
+    def chatbot_node(state: MessagesState, config: RunnableConfig):
+        thread_id = config.get("configurable", {}).get("thread_id", "default")
+        
+        # Get the last human message content to query episodic memory
+        last_message = ""
+        for msg in reversed(state["messages"]):
+            if msg.type == "human":
+                last_message = msg.content
+                break
+
+        # Retrieve relevant past episodes semantically
+        episodic_context = ""
+        if last_message:
+            try:
+                from utils.memory import search_episodic_memory
+                relevant_episodes = search_episodic_memory(last_message, current_thread_id=thread_id, limit=3)
+                if relevant_episodes:
+                    episodic_context = "\n\n=== RELEVANT CONTEXT FROM PAST CONVERSATIONS ===\n" + relevant_episodes + "\n=============================================="
+            except Exception as e:
+                print(f"[Agent] Failed to retrieve episodic memory: {e}")
+
+        dynamic_system_prompt = SYSTEM_PROMPT
+        if episodic_context:
+            dynamic_system_prompt += episodic_context
+
+        messages = [SystemMessage(content=dynamic_system_prompt)] + state["messages"]
 
         response = llm_with_tools.invoke(messages)
 
