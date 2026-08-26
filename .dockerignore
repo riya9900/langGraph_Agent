@@ -1,0 +1,23 @@
+# Version control
+.git
+.gitignore
+
+# Python virtual environment & cache
+.venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+
+# Application persistent data (mounted via volumes)
+data/
+uploads/
+chroma_db/
+
+# IDE / Gemini / Antigravity files
+.agents/
+.vscode/
+.idea/
+
+# Environment files
+.env
