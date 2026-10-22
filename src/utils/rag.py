@@ -32,14 +32,12 @@ os.environ["REQUESTS_CA_BUNDLE"] = certifi.where()
 
 Path("uploads").mkdir(exist_ok=True)
 Path("chroma_db").mkdir(exist_ok=True)
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
-from langchain_openai import OpenAIEmbeddings
-
-embeddings = OpenAIEmbeddings(
-    model="text-embedding-3-small",
-    openai_api_key=openai_key
+embeddings = GoogleGenerativeAIEmbeddings(
+    model="models/embedding-001",
+    google_api_key=os.getenv("GEMINI_API_KEY")
 )
-
 vectorstore = Chroma(
     collection_name="agentic_chatbot_docs_small",
     embedding_function=embeddings,
