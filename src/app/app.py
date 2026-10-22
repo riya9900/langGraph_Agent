@@ -1,6 +1,8 @@
 from dotenv import load_dotenv
 import os
 import certifi
+import time
+from collections import defaultdict
 
 load_dotenv(override=True)
 
@@ -49,6 +51,35 @@ from utils.tools import set_current_thread_id
 
 
 app = FastAPI()
+# Simple rate limiting: 3 chat requests per minute per IP
+request_log = defaultdict(list)
+
+
+@app.middleware("http")
+async def rate_limit(request: Request, call_next):
+    if request.url.path == "/chat/stream":
+        client_ip = request.client.host if request.client else "unknown"
+        now = time.time()
+
+        # Keep only requests from the last 60 seconds
+        request_log[client_ip] = [
+            timestamp
+            for timestamp in request_log[client_ip]
+            if now - timestamp < 60
+        ]
+
+        # Allow maximum 3 requests per minute
+        if len(request_log[client_ip]) >= 3:
+            return JSONResponse(
+                {
+                    "error": "Rate limit exceeded. Please wait a minute and try again."
+                },
+                status_code=429,
+            )
+
+        request_log[client_ip].append(now)
+
+    return await call_next(request)
 
 templates = Jinja2Templates(directory="templates")
 
