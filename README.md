@@ -2,9 +2,14 @@
 
 A fast, containerized AI Chatbot with Memory, RAG (Document Search), and Web Search capabilities.
 
+## 🚀 Live Demo
+
+👉 [Try the live AI Chatbot](https://langgraph-agent-ipgo.onrender.com)
+
 ---
 
 ## ⚡ Quick Run
+---
 
 ### Option 1: Local (`uv`)
 ```powershell
